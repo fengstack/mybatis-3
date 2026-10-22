@@ -1,5 +1,5 @@
 /*
- *    Copyright 2009-2025 the original author or authors.
+ *    Copyright 2009-2026 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -65,6 +65,51 @@ class PostgresCursorTest {
       }
       {
         Cursor<User> usersCursor = mapper.getAllUsers();
+        Iterator<User> iterator = usersCursor.iterator();
+        User user = iterator.next();
+        assertEquals("User1", user.getName());
+        usersCursor.close();
+      }
+    }
+  }
+
+  @Test
+  void shouldBeAbleToReuseStatementWithFetchSize() {
+    // #3505
+    try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.REUSE)) {
+      Mapper mapper = sqlSession.getMapper(Mapper.class);
+      {
+        Cursor<User> usersCursor = mapper.getAllUsersWithFetchSize();
+        Iterator<User> iterator = usersCursor.iterator();
+        User user = iterator.next();
+        assertEquals("User1", user.getName());
+        usersCursor.close();
+      }
+      {
+        Cursor<User> usersCursor = mapper.getAllUsersWithFetchSize();
+        Iterator<User> iterator = usersCursor.iterator();
+        User user = iterator.next();
+        assertEquals("User1", user.getName());
+        usersCursor.close();
+      }
+    }
+  }
+
+  @Test
+  void shouldBeAbleToReuseStatementAfterCursorFullyConsumed() {
+    // #3505
+    try (SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.REUSE)) {
+      Mapper mapper = sqlSession.getMapper(Mapper.class);
+      {
+        Cursor<User> usersCursor = mapper.getAllUsersWithFetchSize();
+        int count = 0;
+        for (User user : usersCursor) {
+          count++;
+        }
+        assertEquals(5, count);
+      }
+      {
+        Cursor<User> usersCursor = mapper.getAllUsersWithFetchSize();
         Iterator<User> iterator = usersCursor.iterator();
         User user = iterator.next();
         assertEquals("User1", user.getName());
